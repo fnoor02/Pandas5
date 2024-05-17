@@ -1,0 +1,70 @@
+Problem 1 : Department Highest Salary
+
+def department_highest_salary(employee: pd.DataFrame, department: pd.DataFrame) -> pd.DataFrame:
+    #we need to find the  higesht salary and department id
+    salary_dict = {}
+    for i in range(len(employee)):
+        salary = employee['salary'][i]
+        deptId = employee['departmentId'][i]
+        if deptId in salary_dict:
+            if salary_dict[deptId] < salary:
+                salary_dict[deptId] = salary
+        else:
+            salary_dict[deptId] = salary
+    #now we need a dictionary for the departments and their names
+    dept_dict = {}
+    for i in range(len(department)):
+        dept_dict[department['id'][i]] = department['name'][i]
+    #now we need to iterate the employee table and see if the salary match and then add to our return list
+    ret = []
+    for i in range(len(employee)):
+        salary = employee['salary'][i]  
+        deptId = employee['departmentId'][i]
+        name = employee['name'][i]
+        if salary_dict[deptId] == salary:
+            ret.append([deptId, name, salary])
+    for entry in ret:
+        if entry[0] in dept_dict:
+            entry[0] = dept_dict[entry[0]]
+
+    return pd.DataFrame(ret, columns = ['Department', 'Employee', 'Salary'])
+
+
+WITH PANDAS
+
+def department_highest_salary(employee: pd.DataFrame, department: pd.DataFrame) -> pd.DataFrame:
+    df = pd.merge(employee, department, left_on = 'departmentId', right_on = 'id', how = 'left')
+    max_salary = df.groupby('departmentId')['salary'].transform('max')
+    df = df[df['salary'] == max_salary]
+    return df[['name_y', 'name_x', 'salary']].rename(columns = {'name_y' : 'Department', 'name_x' : 'Employee'})
+
+
+Problem 2 : Rank Scores
+
+def order_scores(scores: pd.DataFrame) -> pd.DataFrame:
+    #create a list to hold all the scores
+    all_scores = []
+    #iterate the scores DF and add them into the new list
+    for i in range(len(scores)):
+        all_scores.append(scores['score'][i])
+    #sort the list
+    all_scores.sort(reverse = True)
+    if len(scores) == 0:
+        return pd.DataFrame([], columns = ['score', 'rank']) 
+    #now create a final list where we will have a list of lists for score and rank
+    final_list = []
+    #iterate the all scores list and then check the adjacent values, if they match rank stays the same otherise increase rank
+    rank = 1
+    final_list.append([all_scores[0], rank])
+    for i in range(1, len(all_scores)):
+        if all_scores[i] != all_scores[i-1]:
+            rank += 1
+        final_list.append([all_scores[i], rank])
+    
+    return pd.DataFrame(final_list, columns = ['score', 'rank'])
+
+WITH PANDAS
+
+def order_scores(scores: pd.DataFrame) -> pd.DataFrame:
+    scores['rank'] = scores['score'].rank(method = 'dense', ascending = False)
+    return scores[['score','rank']].sort_values(by = ['score'], ascending = False)
